@@ -54,25 +54,30 @@ const Wallet = () => {
 
   // Listen to account changes
   useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        } else {
-          setAccount('');
-          setBalance('0');
-        }
-      });
+    if (!window.ethereum) return;
 
-      window.ethereum.on('chainChanged', () => {
-        window.location.reload();
-      });
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners();
+    // Define named handlers so we can remove them specifically
+    const handleAccountsChanged = (accounts) => {
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+      } else {
+        setAccount('');
+        setBalance('0');
       }
+    };
+
+    const handleChainChanged = () => {
+      window.location.reload();
+    };
+
+    // Register only the handlers we need
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+
+    // Cleanup: remove only the handlers we registered
+    return () => {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
   }, []);
 
@@ -95,20 +100,20 @@ const Wallet = () => {
 
       const amountWei = web3.utils.toWei(amount, 'ether');
 
-      const txHash = await web3.eth.sendTransaction({
+      // web3.eth.sendTransaction returns a receipt object with transactionHash property
+      const receipt = await web3.eth.sendTransaction({
         from: account,
         to: recipientAddress,
         value: amountWei,
       });
 
-      setTransactionHash(txHash);
+      // Extract the transaction hash from the receipt
+      setTransactionHash(receipt.transactionHash);
       setRecipientAddress('');
       setAmount('');
 
-      // Update balance after transaction
-      setTimeout(() => {
-        updateBalance();
-      }, 2000);
+      // Update balance immediately after transaction confirmation
+      await updateBalance();
     } catch (err) {
       setError(err.message);
     } finally {
