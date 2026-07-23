@@ -42,13 +42,16 @@ function Header() {
         }
     }, [showReceiveModal, checkSepolia]);
 
-    // Clear transaction state when Send modal closes
+    // Clear transaction state and form when Send modal closes
     useEffect(() => {
         if (!showSendModal) {
             setTxStatus('');
             setTxHash('');
             setIsCompleted(false);
+            setSendAddress('');
+            setSendAmount('');
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showSendModal]);
 
     return (
