@@ -24,6 +24,7 @@ function Header() {
         updateBalance,
         sendETH,
         switchToSepolia,
+        checkSepolia,
         disconnectWallet,
         copyToClipboard,
     } = useWeb3Wallet();
@@ -32,6 +33,14 @@ function Header() {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showSendModal, setShowSendModal] = useState(false);
     const [showReceiveModal, setShowReceiveModal] = useState(false);
+    const [isOnSepolia, setIsOnSepolia] = useState(false);
+
+    // Check network when Receive modal opens
+    useEffect(() => {
+        if (showReceiveModal) {
+            checkSepolia().then(setIsOnSepolia);
+        }
+    }, [showReceiveModal, checkSepolia]);
 
     // Close send modal after transaction completes
     useEffect(() => {
@@ -257,22 +266,36 @@ function Header() {
                                </button>
                            </div>
                            <div className="modal-body receive-body">
-                               <p className="receive-label">Your Sepolia Address:</p>
-                               <div className="receive-address-box">
-                                   <p className="receive-address">{account}</p>
-                               </div>
-                                <button 
-                                    className="btn btn-copy-address"
-                                    onClick={copyToClipboard}
-                                >
-
-                                   <i className="fa fa-copy"></i> Copy Address
-                               </button>
-                               <div className="receive-info">
-                                   <p><strong>Network:</strong> Sepolia Testnet</p>
-                                   <p><strong>Chain ID:</strong> 11155111</p>
-                                   <p><strong>Testnet Faucet:</strong> Visit <a href="https://sepolia-faucet.pk910.de/" target="_blank" rel="noopener noreferrer">Sepolia Faucet</a> to get free test ETH</p>
-                               </div>
+                               {isOnSepolia ? (
+                                   <>
+                                       <p className="receive-label">Your Sepolia Address:</p>
+                                       <div className="receive-address-box">
+                                           <p className="receive-address">{account}</p>
+                                       </div>
+                                        <button 
+                                            className="btn btn-copy-address"
+                                            onClick={copyToClipboard}
+                                        >
+                                            <i className="fa fa-copy"></i> Copy Address
+                                       </button>
+                                       <div className="receive-info">
+                                           <p><strong>Network:</strong> Sepolia Testnet</p>
+                                           <p><strong>Chain ID:</strong> 11155111</p>
+                                           <p><strong>Testnet Faucet:</strong> Visit <a href="https://sepolia-faucet.pk910.de/" target="_blank" rel="noopener noreferrer">Sepolia Faucet</a> to get free test ETH</p>
+                                       </div>
+                                   </>
+                               ) : (
+                                   <div className="network-warning">
+                                       <p><strong>Please switch to Sepolia Testnet to receive ETH.</strong></p>
+                                       <button
+                                           type="button"
+                                           className="btn btn-primary"
+                                           onClick={switchToSepolia}
+                                       >
+                                           <i className="fa fa-network-wired"></i> Switch to Sepolia
+                                       </button>
+                                   </div>
+                               )}
                            </div>
                            <div className="modal-footer">
                                <button 
