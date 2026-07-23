@@ -16,23 +16,30 @@ export const useWeb3Wallet = () => {
     // Connect Wallet
     const connectWallet = async () => {
         try {
-            if (!window.ethereum) {
-                alert('MetaMask not detected. Please install MetaMask.');
+            const provider = window.ethereum;
+
+            if (!provider) {
+                alert('Web3 wallet not detected. Please install a wallet extension.');
                 return;
             }
 
-            // Request permissions explicitly to show approval dialog
-            await window.ethereum.request({
-                method: 'wallet_requestPermissions',
-                params: [{ eth_accounts: {} }],
-            });
+            // Try to request permissions explicitly (MetaMask feature, best-effort)
+            try {
+                await provider.request({
+                    method: 'wallet_requestPermissions',
+                    params: [{ eth_accounts: {} }],
+                });
+            } catch (permErr) {
+                // wallet_requestPermissions not supported by this provider, continue without it
+                console.warn('wallet_requestPermissions not supported, proceeding with eth_requestAccounts');
+            }
 
-            // Get the accounts after permission granted
-            const accounts = await window.ethereum.request({
+            // Get the accounts (standard EIP-1193 method)
+            const accounts = await provider.request({
                 method: 'eth_requestAccounts',
             });
 
-            const web3Instance = new Web3(window.ethereum);
+            const web3Instance = new Web3(provider);
             setWeb3(web3Instance);
             setAccount(accounts[0]);
 
@@ -245,8 +252,10 @@ export const useWeb3Wallet = () => {
 
     // Switch to Sepolia
     const switchToSepolia = useCallback(async () => {
-        if (!window.ethereum) {
-            alert('MetaMask not detected. Please install MetaMask.');
+        const provider = window.ethereum;
+
+        if (!provider) {
+            alert('Web3 wallet not detected. Please install a wallet extension.');
             return;
         }
 
@@ -257,7 +266,7 @@ export const useWeb3Wallet = () => {
                 return;
             }
 
-            await window.ethereum.request({
+            await provider.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: '0xaa36a7' }],
             });
@@ -267,7 +276,7 @@ export const useWeb3Wallet = () => {
             if (err.code === 4902) {
                 // Network not added, try to add it
                 try {
-                    await window.ethereum.request({
+                    await provider.request({
                         method: 'wallet_addEthereumChain',
                         params: [{
                             chainId: '0xaa36a7',
