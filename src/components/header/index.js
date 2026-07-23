@@ -11,6 +11,13 @@ function Header() {
     const [web3, setWeb3] = useState(null);
     const [showWalletMenu, setShowWalletMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showSendModal, setShowSendModal] = useState(false);
+    const [showReceiveModal, setShowReceiveModal] = useState(false);
+    const [sendAddress, setSendAddress] = useState('');
+    const [sendAmount, setSendAmount] = useState('');
+    const [txStatus, setTxStatus] = useState('');
+    const [txHash, setTxHash] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
     // Connect Wallet
     const connectWallet = async () => {
@@ -86,6 +93,136 @@ function Header() {
         setShowWalletMenu(false);
     };
 
+    // Send ETH Function
+    const sendETH = async () => {
+        if (!sendAddress || !sendAmount) {
+            alert('Please enter recipient address and amount');
+            return;
+        }
+
+        if (!web3 || !web3.utils.isAddress(sendAddress)) {
+            alert('Invalid recipient address');
+            return;
+        }
+
+        const amountInEth = parseFloat(sendAmount);
+        if (amountInEth <= 0 || amountInEth > parseFloat(balance)) {
+            alert('Invalid amount or insufficient balance');
+            return;
+        }
+
+        setIsSending(true);
+        setTxStatus('Preparing transaction...');
+        
+        try {
+            const amountInWei = web3.utils.toWei(amountInEth.toString(), 'ether');
+            
+            // Get current block to extract base fee for EIP-1559
+            const block = await web3.eth.getBlock('latest');
+            const baseFee = parseInt(block.baseFeePerGas);
+            
+            // Set priority fee (tip) - typically 1-2 Gwei
+            const priorityFeeWei = parseInt(web3.utils.toWei('2', 'gwei'));
+            
+            // Calculate max fee per gas = base fee + priority fee
+            const maxFeePerGas = (baseFee + priorityFeeWei).toString();
+            const maxPriorityFeePerGas = priorityFeeWei.toString();
+            
+            // Estimate gas
+            const gasEstimate = await web3.eth.estimateGas({
+                from: account,
+                to: sendAddress,
+                value: amountInWei,
+            });
+
+            setTxStatus('Requesting MetaMask approval...');
+            
+            // Send transaction with EIP-1559 parameters
+            const receipt = await web3.eth.sendTransaction({
+                from: account,
+                to: sendAddress,
+                value: amountInWei,
+                gas: gasEstimate,
+                maxFeePerGas: maxFeePerGas,
+                maxPriorityFeePerGas: maxPriorityFeePerGas,
+            });
+
+            setTxHash(receipt.transactionHash);
+            setTxStatus('Transaction confirmed!');
+            
+            // Reset form and update balance
+            setSendAddress('');
+            setSendAmount('');
+            await updateBalance();
+            
+            setTimeout(() => {
+                setShowSendModal(false);
+                setTxStatus('');
+                setTxHash('');
+            }, 2000);
+        } catch (err) {
+            console.error('Transaction error:', err);
+            setTxStatus(`Error: ${err.message}`);
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // Check if connected to Sepolia testnet
+    const checkSepolia = async () => {
+        if (!window.ethereum) return false;
+        try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            return chainId === '0xaa36a7'; // Sepolia chain ID is 11155111 in decimal, 0xaa36a7 in hex
+        } catch (err) {
+            console.error('Error checking chain:', err);
+            return false;
+        }
+    };
+
+    // Switch to Sepolia
+    const switchToSepolia = async () => {
+        try {
+            const isOnSepolia = await checkSepolia();
+            if (isOnSepolia) {
+                alert('Already on Sepolia testnet!');
+                return;
+            }
+
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0xaa36a7' }],
+            });
+            
+            window.location.reload();
+        } catch (err) {
+            if (err.code === 4902) {
+                // Network not added, try to add it
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0xaa36a7',
+                            chainName: 'Sepolia',
+                            rpcUrls: ['https://sepolia.infura.io/v3/'],
+                            nativeCurrency: {
+                                name: 'ETH',
+                                symbol: 'ETH',
+                                decimals: 18,
+                            },
+                            blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+                        }],
+                    });
+                    window.location.reload();
+                } catch (addErr) {
+                    alert('Failed to add Sepolia network');
+                }
+            } else {
+                alert('Failed to switch to Sepolia testnet');
+            }
+        }
+    };
+
     return (
         <div className="container">
             <nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -121,6 +258,24 @@ function Header() {
                                            <p className="wallet-label">Balance</p>
                                            <p className="wallet-value">{parseFloat(balance).toFixed(4)} ETH</p>
                                        </div>
+                                       <button 
+                                           className="wallet-menu-btn send-btn"
+                                           onClick={() => setShowSendModal(true)}
+                                       >
+                                           <i className="fa fa-send"></i> Send
+                                       </button>
+                                       <button 
+                                           className="wallet-menu-btn receive-btn"
+                                           onClick={() => setShowReceiveModal(true)}
+                                       >
+                                           <i className="fa fa-arrow-down"></i> Receive
+                                       </button>
+                                       <button 
+                                           className="wallet-menu-btn network-btn"
+                                           onClick={switchToSepolia}
+                                       >
+                                           <i className="fa fa-network-wired"></i> Sepolia
+                                       </button>
                                        <button 
                                            className="wallet-menu-btn copy-btn"
                                            onClick={copyToClipboard}
@@ -187,6 +342,120 @@ function Header() {
                         </div>
                     </form>
                </div>
+
+               {/* Send ETH Modal */}
+               {showSendModal && (
+                   <div className="modal-overlay" onClick={() => !isSending && setShowSendModal(false)}>
+                       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                           <div className="modal-header">
+                               <h3>Send ETH</h3>
+                               <button 
+                                   className="modal-close"
+                                   onClick={() => !isSending && setShowSendModal(false)}
+                               >
+                                   ×
+                               </button>
+                           </div>
+                           <div className="modal-body">
+                               <div className="form-group">
+                                   <label>Recipient Address</label>
+                                   <input 
+                                       type="text"
+                                       className="form-control"
+                                       placeholder="0x..."
+                                       value={sendAddress}
+                                       onChange={(e) => setSendAddress(e.target.value)}
+                                       disabled={isSending}
+                                   />
+                               </div>
+                               <div className="form-group">
+                                   <label>Amount (ETH)</label>
+                                   <input 
+                                       type="number"
+                                       className="form-control"
+                                       placeholder="0.0"
+                                       value={sendAmount}
+                                       onChange={(e) => setSendAmount(e.target.value)}
+                                       disabled={isSending}
+                                       step="0.0001"
+                                   />
+                                   <small>Available: {parseFloat(balance).toFixed(4)} ETH</small>
+                               </div>
+                               {txStatus && (
+                                   <div className={`tx-status ${txStatus.includes('Error') ? 'error' : txStatus.includes('confirmed') ? 'success' : 'pending'}`}>
+                                       {txStatus}
+                                       {txHash && (
+                                           <div className="tx-hash">
+                                               <small>Hash: {txHash.substring(0, 16)}...</small>
+                                           </div>
+                                       )}
+                                   </div>
+                               )}
+                           </div>
+                           <div className="modal-footer">
+                               <button 
+                                   className="btn btn-cancel"
+                                   onClick={() => setShowSendModal(false)}
+                                   disabled={isSending}
+                               >
+                                   Cancel
+                               </button>
+                               <button 
+                                   className="btn btn-send"
+                                   onClick={sendETH}
+                                   disabled={isSending}
+                               >
+                                   {isSending ? 'Sending...' : 'Send'}
+                               </button>
+                           </div>
+                       </div>
+                   </div>
+               )}
+
+               {/* Receive ETH Modal */}
+               {showReceiveModal && (
+                   <div className="modal-overlay" onClick={() => setShowReceiveModal(false)}>
+                       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                           <div className="modal-header">
+                               <h3>Receive ETH</h3>
+                               <button 
+                                   className="modal-close"
+                                   onClick={() => setShowReceiveModal(false)}
+                               >
+                                   ×
+                               </button>
+                           </div>
+                           <div className="modal-body receive-body">
+                               <p className="receive-label">Your Sepolia Address:</p>
+                               <div className="receive-address-box">
+                                   <p className="receive-address">{account}</p>
+                               </div>
+                               <button 
+                                   className="btn btn-copy-address"
+                                   onClick={() => {
+                                       navigator.clipboard.writeText(account);
+                                       alert('Address copied to clipboard!');
+                                   }}
+                               >
+                                   <i className="fa fa-copy"></i> Copy Address
+                               </button>
+                               <div className="receive-info">
+                                   <p><strong>Network:</strong> Sepolia Testnet</p>
+                                   <p><strong>Chain ID:</strong> 11155111</p>
+                                   <p><strong>Testnet Faucet:</strong> Visit <a href="https://sepolia-faucet.pk910.de/" target="_blank" rel="noopener noreferrer">Sepolia Faucet</a> to get free test ETH</p>
+                               </div>
+                           </div>
+                           <div className="modal-footer">
+                               <button 
+                                   className="btn btn-close-modal"
+                                   onClick={() => setShowReceiveModal(false)}
+                               >
+                                   Close
+                               </button>
+                           </div>
+                       </div>
+                   </div>
+               )}
             </nav>
          </div>
     );
