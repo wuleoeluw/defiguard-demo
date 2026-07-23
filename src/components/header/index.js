@@ -119,11 +119,11 @@ function Header() {
             
             // Get current block to extract base fee for EIP-1559
             const block = await web3.eth.getBlock('latest');
-            const baseFee = parseInt(block.baseFeePerGas);
-            
+            const baseFee = BigInt(block.baseFeePerGas ?? 0);
+
             // Set priority fee (tip) - typically 1-2 Gwei
-            const priorityFeeWei = parseInt(web3.utils.toWei('2', 'gwei'));
-            
+            const priorityFeeWei = BigInt(web3.utils.toWei('2', 'gwei'));
+
             // Calculate max fee per gas = base fee + priority fee
             const maxFeePerGas = (baseFee + priorityFeeWei).toString();
             const maxPriorityFeePerGas = priorityFeeWei.toString();
