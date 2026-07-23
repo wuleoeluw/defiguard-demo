@@ -163,8 +163,10 @@ export const useWeb3Wallet = () => {
             // Set priority fee (tip) - typically 1-2 Gwei
             const priorityFeeWei = new BigNumber(web3.utils.toWei('2', 'gwei'));
 
-            // Calculate max fee per gas = base fee + priority fee
-            const maxFeePerGas = baseFee.plus(priorityFeeWei).toString();
+            // Calculate max fee per gas with headroom (2x base fee) to handle base fee increases
+            // between transaction signing and inclusion
+            // maxFeePerGas = (baseFee * 2) + priorityFee
+            const maxFeePerGas = baseFee.multipliedBy(2).plus(priorityFeeWei).toString();
             const maxPriorityFeePerGas = priorityFeeWei.toString();
             
             // Estimate gas
