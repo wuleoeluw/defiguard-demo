@@ -257,12 +257,10 @@ function Header() {
                                <div className="receive-address-box">
                                    <p className="receive-address">{account}</p>
                                </div>
-                               <button 
-                                   className="btn btn-copy-address"
-                                   onClick={() => {
-                                       navigator.clipboard.writeText(account);
-                                       alert('Address copied to clipboard!');
-                                   }}
+                                <button 
+                                    className="btn btn-copy-address"
+                                    onClick={copyToClipboard}
+                                >
                                >
                                    <i className="fa fa-copy"></i> Copy Address
                                </button>
