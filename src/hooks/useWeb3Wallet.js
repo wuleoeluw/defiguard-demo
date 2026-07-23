@@ -46,7 +46,7 @@ export const useWeb3Wallet = () => {
             const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
             setBalance(balanceEth);
         } catch (err) {
-            console.error('Failed to fetch balance');
+            console.error('Failed to fetch balance', err);
         }
     };
 
