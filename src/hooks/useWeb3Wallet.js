@@ -142,8 +142,8 @@ export const useWeb3Wallet = () => {
         }
 
         setIsSending(true);
+        setTxHash('');
         setTxStatus('Preparing transaction...');
-        
         try {
             const amountInWei = web3.utils.toWei(sendAmount, 'ether');
             
