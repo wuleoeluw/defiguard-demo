@@ -165,6 +165,19 @@ export const useWeb3Wallet = () => {
                 value: amountInWei,
             });
 
+            // Validate that total cost (amount + gas fees) fits in balance
+            const gasCostBN = new BigNumber(gasEstimate).multipliedBy(new BigNumber(maxFeePerGas));
+            const totalCostBN = new BigNumber(amountInWei).plus(gasCostBN);
+            const balanceInWei = web3.utils.toWei(balance, 'ether');
+            const balanceBN = new BigNumber(balanceInWei);
+
+            if (totalCostBN.isGreaterThan(balanceBN)) {
+                alert('Insufficient balance to cover transaction and gas fees');
+                setIsSending(false);
+                setTxStatus('');
+                return;
+            }
+
             setTxStatus('Requesting MetaMask approval...');
             
             // Send transaction with EIP-1559 parameters
