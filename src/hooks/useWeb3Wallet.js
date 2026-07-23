@@ -149,7 +149,16 @@ export const useWeb3Wallet = () => {
             
             // Get current block to extract base fee for EIP-1559
             const block = await web3.eth.getBlock('latest');
-            const baseFee = new BigNumber(block.baseFeePerGas ?? 0);
+            
+            // Normalize baseFeePerGas from hex string or bigint to decimal string
+            let baseFeeDecimal = '0';
+            if (block.baseFeePerGas) {
+                // Convert hex string to decimal, or handle bigint
+                baseFeeDecimal = typeof block.baseFeePerGas === 'string' 
+                    ? web3.utils.toDecimal(block.baseFeePerGas).toString()
+                    : block.baseFeePerGas.toString();
+            }
+            const baseFee = new BigNumber(baseFeeDecimal);
 
             // Set priority fee (tip) - typically 1-2 Gwei
             const priorityFeeWei = new BigNumber(web3.utils.toWei('2', 'gwei'));
