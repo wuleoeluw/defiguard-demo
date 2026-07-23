@@ -177,7 +177,9 @@ function Header() {
                            <div className="modal-header">
                                <h3>Send ETH</h3>
                                <button 
+                                   type="button"
                                    className="modal-close"
+                                   aria-label="Close Send ETH modal"
                                    onClick={() => !isSending && setShowSendModal(false)}
                                >
                                    ×
@@ -246,7 +248,9 @@ function Header() {
                            <div className="modal-header">
                                <h3>Receive ETH</h3>
                                <button 
+                                   type="button"
                                    className="modal-close"
+                                   aria-label="Close Receive ETH modal"
                                    onClick={() => setShowReceiveModal(false)}
                                >
                                    ×
