@@ -92,9 +92,14 @@ export const useWeb3Wallet = () => {
     }, [web3]);
 
     // Copy to clipboard
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(account);
-        alert('Address copied to clipboard!');
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(account);
+            alert('Address copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy address to clipboard', err);
+            alert('Failed to copy address to clipboard');
+        }
     };
 
     const disconnectWallet = () => {
