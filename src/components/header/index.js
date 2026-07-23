@@ -3,7 +3,7 @@ import { useWeb3Wallet } from "../../hooks/useWeb3Wallet";
 
 import "./index.css";
 
-import AppLogo from "../../assets/images/logo.png"
+import AppLogo from "../../assets/images/logo.png";
 
 function Header() {
     const {
