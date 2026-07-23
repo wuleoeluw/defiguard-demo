@@ -230,6 +230,11 @@ export const useWeb3Wallet = () => {
 
     // Switch to Sepolia
     const switchToSepolia = useCallback(async () => {
+        if (!window.ethereum) {
+            alert('MetaMask not detected. Please install MetaMask.');
+            return;
+        }
+
         try {
             const isOnSepolia = await checkSepolia();
             if (isOnSepolia) {
