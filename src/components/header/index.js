@@ -19,6 +19,7 @@ function Header() {
     const [txStatus, setTxStatus] = useState('');
     const [txHash, setTxHash] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
 
     // Connect Wallet
     const connectWallet = async () => {
@@ -150,6 +151,7 @@ function Header() {
 
             setTxHash(receipt.transactionHash);
             setTxStatus('Transaction confirmed!');
+            setIsCompleted(true);
             
             // Reset form and update balance
             setSendAddress('');
@@ -160,10 +162,12 @@ function Header() {
                 setShowSendModal(false);
                 setTxStatus('');
                 setTxHash('');
+                setIsCompleted(false);
             }, 2000);
         } catch (err) {
             console.error('Transaction error:', err);
             setTxStatus(`Error: ${err.message}`);
+            setIsCompleted(false);
         } finally {
             setIsSending(false);
         }
@@ -366,7 +370,7 @@ function Header() {
                                        placeholder="0x..."
                                        value={sendAddress}
                                        onChange={(e) => setSendAddress(e.target.value)}
-                                       disabled={isSending}
+                                       disabled={isSending || isCompleted}
                                    />
                                </div>
                                <div className="form-group">
@@ -377,7 +381,7 @@ function Header() {
                                        placeholder="0.0"
                                        value={sendAmount}
                                        onChange={(e) => setSendAmount(e.target.value)}
-                                       disabled={isSending}
+                                       disabled={isSending || isCompleted}
                                        step="0.0001"
                                    />
                                    <small>Available: {parseFloat(balance).toFixed(4)} ETH</small>
@@ -397,16 +401,16 @@ function Header() {
                                <button 
                                    className="btn btn-cancel"
                                    onClick={() => setShowSendModal(false)}
-                                   disabled={isSending}
+                                   disabled={isSending || isCompleted}
                                >
                                    Cancel
                                </button>
                                <button 
                                    className="btn btn-send"
                                    onClick={sendETH}
-                                   disabled={isSending}
+                                   disabled={isSending || isCompleted}
                                >
-                                   {isSending ? 'Sending...' : 'Send'}
+                                   {isSending ? 'Sending...' : isCompleted ? '✓ Sent!' : 'Send'}
                                </button>
                            </div>
                        </div>
