@@ -52,25 +52,30 @@ export const useWeb3Wallet = () => {
 
     // Listen to account changes
     useEffect(() => {
-        if (window.ethereum) {
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts.length > 0) {
-                    setAccount(accounts[0]);
-                } else {
-                    setAccount('');
-                    setBalance('0');
-                }
-            });
+        if (!window.ethereum) return;
 
-            window.ethereum.on('chainChanged', () => {
-                window.location.reload();
-            });
-        }
-
-        return () => {
-            if (window.ethereum) {
-                window.ethereum.removeAllListeners();
+        // Define named handlers so we can remove them specifically
+        const handleAccountsChanged = (accounts) => {
+            if (accounts.length > 0) {
+                setAccount(accounts[0]);
+            } else {
+                setAccount('');
+                setBalance('0');
             }
+        };
+
+        const handleChainChanged = () => {
+            window.location.reload();
+        };
+
+        // Register only the handlers we need
+        window.ethereum.on('accountsChanged', handleAccountsChanged);
+        window.ethereum.on('chainChanged', handleChainChanged);
+
+        // Cleanup: remove only the handlers we registered
+        return () => {
+            window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+            window.ethereum.removeListener('chainChanged', handleChainChanged);
         };
     }, []);
 
