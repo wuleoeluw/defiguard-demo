@@ -1,0 +1,329 @@
+import { useEffect, useState, useCallback } from "react";
+import Web3 from "web3";
+import BigNumber from "bignumber.js";
+
+export const useWeb3Wallet = () => {
+    const [account, setAccount] = useState('');
+    const [balance, setBalance] = useState('0');
+    const [web3, setWeb3] = useState(null);
+    const [sendAddress, setSendAddress] = useState('');
+    const [sendAmount, setSendAmount] = useState('');
+    const [txStatus, setTxStatus] = useState('');
+    const [txHash, setTxHash] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+
+    // Connect Wallet
+    const connectWallet = async () => {
+        try {
+            const provider = window.ethereum;
+
+            if (!provider) {
+                alert('Web3 wallet not detected. Please install a wallet extension.');
+                return;
+            }
+
+            // Try to request permissions explicitly (MetaMask feature, best-effort)
+            try {
+                await provider.request({
+                    method: 'wallet_requestPermissions',
+                    params: [{ eth_accounts: {} }],
+                });
+            } catch (permErr) {
+                // wallet_requestPermissions not supported by this provider, continue without it
+                console.warn('wallet_requestPermissions not supported, proceeding with eth_requestAccounts');
+            }
+
+            // Get the accounts (standard EIP-1193 method)
+            const accounts = await provider.request({
+                method: 'eth_requestAccounts',
+            });
+
+            const web3Instance = new Web3(provider);
+            setWeb3(web3Instance);
+            setAccount(accounts[0]);
+
+            // Get initial balance
+            const balanceWei = await web3Instance.eth.getBalance(accounts[0]);
+            const balanceEth = web3Instance.utils.fromWei(balanceWei, 'ether');
+            setBalance(balanceEth);
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    // Update balance
+    const updateBalance = async () => {
+        if (!web3 || !account) return;
+        try {
+            const balanceWei = await web3.eth.getBalance(account);
+            const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+            setBalance(balanceEth);
+        } catch (err) {
+            console.error('Failed to fetch balance', err);
+        }
+    };
+
+    // Listen to account changes
+    useEffect(() => {
+        if (!window.ethereum) return;
+
+        // Define named handlers so we can remove them specifically
+        const handleAccountsChanged = async (accounts) => {
+            // Only update account if web3 is initialized (user is connected)
+            if (!web3) return;
+
+            if (accounts.length > 0) {
+                const newAccount = accounts[0];
+                setAccount(newAccount);
+
+                // Fetch balance for the new account
+                try {
+                    const balanceWei = await web3.eth.getBalance(newAccount);
+                    const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+                    setBalance(balanceEth);
+                } catch (err) {
+                    console.error('Failed to fetch balance for new account:', err);
+                }
+            } else {
+                setAccount('');
+                setBalance('0');
+            }
+        };
+
+        const handleChainChanged = () => {
+            window.location.reload();
+        };
+
+        // Register only the handlers we need
+        window.ethereum.on('accountsChanged', handleAccountsChanged);
+        window.ethereum.on('chainChanged', handleChainChanged);
+
+        // Cleanup: remove only the handlers we registered
+        return () => {
+            window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+            window.ethereum.removeListener('chainChanged', handleChainChanged);
+        };
+    }, [web3]);
+
+    // Copy to clipboard
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(account);
+            alert('Address copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy address to clipboard', err);
+            alert('Failed to copy address to clipboard');
+        }
+    };
+
+    const disconnectWallet = () => {
+        setAccount('');
+        setBalance('0');
+        setWeb3(null);
+        // Clear all form and transaction state
+        setSendAddress('');
+        setSendAmount('');
+        setTxStatus('');
+        setTxHash('');
+        setIsSending(false);
+        setIsCompleted(false);
+    };
+
+    // Send ETH Function
+    const sendETH = async () => {
+        if (!sendAddress || !sendAmount) {
+            alert('Please enter recipient address and amount');
+            return;
+        }
+
+        if (!web3 || !web3.utils.isAddress(sendAddress)) {
+            alert('Invalid recipient address');
+            return;
+        }
+
+        // Validate amount using Wei integers (BigNumber for exact precision)
+        try {
+            const amountInWei = web3.utils.toWei(sendAmount, 'ether');
+            const amountBN = new BigNumber(amountInWei);
+            const balanceInWei = web3.utils.toWei(balance, 'ether');
+            const balanceBN = new BigNumber(balanceInWei);
+
+            if (amountBN.isLessThanOrEqualTo(0)) {
+                alert('Amount must be greater than 0');
+                return;
+            }
+
+            if (amountBN.isGreaterThan(balanceBN)) {
+                alert('Insufficient balance');
+                return;
+            }
+        } catch (err) {
+            alert('Invalid amount');
+            return;
+        }
+
+        setIsSending(true);
+        setTxHash('');
+        setTxStatus('Preparing transaction...');
+        try {
+            const amountInWei = web3.utils.toWei(sendAmount, 'ether');
+            
+            // Get current block to extract base fee for EIP-1559
+            const block = await web3.eth.getBlock('latest');
+            
+            // Normalize baseFeePerGas from hex string or bigint to decimal string
+            let baseFeeDecimal = '0';
+            if (block.baseFeePerGas) {
+                // Convert hex string to decimal, or handle bigint
+                baseFeeDecimal = typeof block.baseFeePerGas === 'string' 
+                    ? web3.utils.toDecimal(block.baseFeePerGas).toString()
+                    : block.baseFeePerGas.toString();
+            }
+            const baseFee = new BigNumber(baseFeeDecimal);
+
+            // Set priority fee (tip) - typically 1-2 Gwei
+            const priorityFeeWei = new BigNumber(web3.utils.toWei('2', 'gwei'));
+
+            // Calculate max fee per gas with headroom (2x base fee) to handle base fee increases
+            // between transaction signing and inclusion
+            // maxFeePerGas = (baseFee * 2) + priorityFee
+            const maxFeePerGas = baseFee.multipliedBy(2).plus(priorityFeeWei).toString();
+            const maxPriorityFeePerGas = priorityFeeWei.toString();
+            
+            // Estimate gas
+            const gasEstimate = await web3.eth.estimateGas({
+                from: account,
+                to: sendAddress,
+                value: amountInWei,
+            });
+
+            // Validate that total cost (amount + gas fees) fits in balance
+            const gasCostBN = new BigNumber(gasEstimate).multipliedBy(new BigNumber(maxFeePerGas));
+            const totalCostBN = new BigNumber(amountInWei).plus(gasCostBN);
+            const balanceInWei = web3.utils.toWei(balance, 'ether');
+            const balanceBN = new BigNumber(balanceInWei);
+
+            if (totalCostBN.isGreaterThan(balanceBN)) {
+                alert('Insufficient balance to cover transaction and gas fees');
+                setIsSending(false);
+                setTxStatus('');
+                return;
+            }
+
+            setTxStatus('Requesting MetaMask approval...');
+            
+            // Send transaction with EIP-1559 parameters
+            const receipt = await web3.eth.sendTransaction({
+                from: account,
+                to: sendAddress,
+                value: amountInWei,
+                gas: gasEstimate,
+                maxFeePerGas: maxFeePerGas,
+                maxPriorityFeePerGas: maxPriorityFeePerGas,
+            });
+
+            setTxHash(receipt.transactionHash);
+            setTxStatus('Transaction confirmed!');
+            setIsCompleted(true);
+            
+            // Update balance after successful transaction
+            await updateBalance();
+        } catch (err) {
+            console.error('Transaction error:', err);
+            setTxStatus(`Error: ${err.message}`);
+            setIsCompleted(false);
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // Check if connected to Sepolia testnet
+    const checkSepolia = useCallback(async () => {
+        if (!window.ethereum) return false;
+        try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            return chainId === '0xaa36a7'; // Sepolia chain ID is 11155111 in decimal, 0xaa36a7 in hex
+        } catch (err) {
+            console.error('Error checking chain:', err);
+            return false;
+        }
+    }, []);
+
+    // Switch to Sepolia
+    const switchToSepolia = useCallback(async () => {
+        const provider = window.ethereum;
+
+        if (!provider) {
+            alert('Web3 wallet not detected. Please install a wallet extension.');
+            return;
+        }
+
+        try {
+            const isOnSepolia = await checkSepolia();
+            if (isOnSepolia) {
+                alert('Already on Sepolia testnet!');
+                return;
+            }
+
+            await provider.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0xaa36a7' }],
+            });
+            
+            window.location.reload();
+        } catch (err) {
+            if (err.code === 4902) {
+                // Network not added, try to add it
+                try {
+                    await provider.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0xaa36a7',
+                            chainName: 'Sepolia',
+                            rpcUrls: ['https://rpc.sepolia.org'],
+                            nativeCurrency: {
+                                name: 'ETH',
+                                symbol: 'ETH',
+                                decimals: 18,
+                            },
+                            blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+                        }],
+                    });
+                    window.location.reload();
+                } catch (addErr) {
+                    alert('Failed to add Sepolia network');
+                }
+            } else {
+                alert('Failed to switch to Sepolia testnet');
+            }
+        }
+    }, [checkSepolia]);
+
+    return {
+        // State
+        account,
+        balance,
+        web3,
+        sendAddress,
+        sendAmount,
+        txStatus,
+        txHash,
+        isSending,
+        isCompleted,
+        // Setters
+        setSendAddress,
+        setSendAmount,
+        setTxStatus,
+        setTxHash,
+        setIsCompleted,
+        // Functions
+        connectWallet,
+        updateBalance,
+        sendETH,
+        checkSepolia,
+        switchToSepolia,
+        disconnectWallet,
+        copyToClipboard,
+    };
+};
