@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Web3 from "web3";
 import BigNumber from "bignumber.js";
 
@@ -217,7 +217,7 @@ export const useWeb3Wallet = () => {
     };
 
     // Check if connected to Sepolia testnet
-    const checkSepolia = async () => {
+    const checkSepolia = useCallback(async () => {
         if (!window.ethereum) return false;
         try {
             const chainId = await window.ethereum.request({ method: 'eth_chainId' });
@@ -226,10 +226,10 @@ export const useWeb3Wallet = () => {
             console.error('Error checking chain:', err);
             return false;
         }
-    };
+    }, []);
 
     // Switch to Sepolia
-    const switchToSepolia = async () => {
+    const switchToSepolia = useCallback(async () => {
         try {
             const isOnSepolia = await checkSepolia();
             if (isOnSepolia) {
@@ -269,7 +269,7 @@ export const useWeb3Wallet = () => {
                 alert('Failed to switch to Sepolia testnet');
             }
         }
-    };
+    }, [checkSepolia]);
 
     return {
         // State
