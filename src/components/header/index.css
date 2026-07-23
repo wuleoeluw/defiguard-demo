@@ -1,0 +1,248 @@
+/* Wallet Styling */
+.navbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.navbar-brand {
+  flex-shrink: 0;
+}
+
+.navbar-right-group {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 10px;
+}
+
+.wallet-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.navbar-collapse {
+  display: none;
+  order: 3;
+  width: 100%;
+}
+
+.navbar-collapse.show {
+  display: block !important;
+}
+
+.navbar-toggler {
+  height: 38px;
+  padding: 6px 10px !important;
+}
+
+.btn-connect-wallet {
+  background-color: #02a763;
+  color: #faf9f9 !important;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+  height: 38px;
+}
+
+.btn-connect-wallet:hover {
+  background-color: #01945b;
+  transform: none;
+  box-shadow: none;
+}
+
+.wallet-info-container {
+  position: relative;
+}
+
+.btn-wallet-connected {
+  background: #faf9f9;
+  color: #010101 !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+}
+
+.btn-wallet-connected:hover {
+  background: #02a763;
+  color: #faf9f9 !important;
+  border-color: #02a763;
+}
+
+.account-short {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.balance-badge {
+  background: #02a763;
+  color: #faf9f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 5px;
+}
+
+.btn-wallet-connected:hover .balance-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.wallet-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  padding: 15px;
+  margin-top: 10px;
+  min-width: 280px;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wallet-menu-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.wallet-menu-item:last-of-type {
+  border-bottom: none;
+}
+
+.wallet-label {
+  color: #999;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 5px 0;
+  font-weight: 600;
+}
+
+.wallet-value {
+  color: #333;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.wallet-menu-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+  justify-content: center;
+  color: #333;
+  text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+}
+
+.wallet-menu-btn:hover {
+  background: #02a763;
+  border-color: #02a763;
+  color: #faf9f9;
+}
+
+.copy-btn:hover {
+  background: #e8f5e9;
+  border-color: #02a763;
+  color: #02a763;
+}
+
+/* Mobile Responsive */
+@media (min-width: 992px) {
+  .navbar-collapse {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .navbar {
+    flex-wrap: wrap;
+  }
+
+  .navbar-collapse {
+    display: none;
+  }
+
+  .navbar-collapse.show {
+    display: block !important;
+    width: 100%;
+  }
+
+  .btn-connect-wallet,
+  .btn-wallet-connected {
+    font-size: 12px;
+    padding: 6px 12px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    white-space: nowrap;
+    height: 38px;
+  }
+
+  .btn-connect-wallet i,
+  .btn-wallet-connected i {
+    font-size: 14px;
+  }
+
+  .balance-badge {
+    display: none;
+  }
+
+  .account-short {
+    font-size: 11px;
+  }
+
+  .wallet-menu-dropdown {
+    min-width: 250px;
+    right: -10px;
+  }
+}
