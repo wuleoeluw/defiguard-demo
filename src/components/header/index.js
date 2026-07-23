@@ -261,7 +261,7 @@ function Header() {
                                     className="btn btn-copy-address"
                                     onClick={copyToClipboard}
                                 >
-                               >
+
                                    <i className="fa fa-copy"></i> Copy Address
                                </button>
                                <div className="receive-info">
