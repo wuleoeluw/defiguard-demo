@@ -205,9 +205,7 @@ export const useWeb3Wallet = () => {
             setTxStatus('Transaction confirmed!');
             setIsCompleted(true);
             
-            // Reset form and update balance
-            setSendAddress('');
-            setSendAmount('');
+            // Update balance after successful transaction
             await updateBalance();
         } catch (err) {
             console.error('Transaction error:', err);

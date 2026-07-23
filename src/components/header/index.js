@@ -42,19 +42,14 @@ function Header() {
         }
     }, [showReceiveModal, checkSepolia]);
 
-    // Close send modal after transaction completes
+    // Clear transaction state when Send modal closes
     useEffect(() => {
-        if (isCompleted) {
-            const timer = setTimeout(() => {
-                setShowSendModal(false);
-                setTxStatus('');
-                setTxHash('');
-                setIsCompleted(false);
-            }, 2000);
-            return () => clearTimeout(timer);
+        if (!showSendModal) {
+            setTxStatus('');
+            setTxHash('');
+            setIsCompleted(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isCompleted]);
+    }, [showSendModal]);
 
     return (
         <div className="container">
