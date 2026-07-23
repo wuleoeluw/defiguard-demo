@@ -56,19 +56,20 @@ export const useWeb3Wallet = () => {
 
         // Define named handlers so we can remove them specifically
         const handleAccountsChanged = async (accounts) => {
+            // Only update account if web3 is initialized (user is connected)
+            if (!web3) return;
+
             if (accounts.length > 0) {
                 const newAccount = accounts[0];
                 setAccount(newAccount);
 
                 // Fetch balance for the new account
-                if (web3) {
-                    try {
-                        const balanceWei = await web3.eth.getBalance(newAccount);
-                        const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
-                        setBalance(balanceEth);
-                    } catch (err) {
-                        console.error('Failed to fetch balance for new account:', err);
-                    }
+                try {
+                    const balanceWei = await web3.eth.getBalance(newAccount);
+                    const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+                    setBalance(balanceEth);
+                } catch (err) {
+                    console.error('Failed to fetch balance for new account:', err);
                 }
             } else {
                 setAccount('');
