@@ -21,6 +21,13 @@ export const useWeb3Wallet = () => {
                 return;
             }
 
+            // Request permissions explicitly to show approval dialog
+            await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }],
+            });
+
+            // Get the accounts after permission granted
             const accounts = await window.ethereum.request({
                 method: 'eth_requestAccounts',
             });
@@ -107,6 +114,13 @@ export const useWeb3Wallet = () => {
         setAccount('');
         setBalance('0');
         setWeb3(null);
+        // Clear all form and transaction state
+        setSendAddress('');
+        setSendAmount('');
+        setTxStatus('');
+        setTxHash('');
+        setIsSending(false);
+        setIsCompleted(false);
     };
 
     // Send ETH Function
