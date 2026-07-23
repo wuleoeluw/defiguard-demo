@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Web3 from "web3";
+import BigNumber from "bignumber.js";
 
 import "./index.css";
 
@@ -119,13 +120,13 @@ function Header() {
             
             // Get current block to extract base fee for EIP-1559
             const block = await web3.eth.getBlock('latest');
-            const baseFee = BigInt(block.baseFeePerGas ?? 0);
+            const baseFee = new BigNumber(block.baseFeePerGas ?? 0);
 
             // Set priority fee (tip) - typically 1-2 Gwei
-            const priorityFeeWei = BigInt(web3.utils.toWei('2', 'gwei'));
+            const priorityFeeWei = new BigNumber(web3.utils.toWei('2', 'gwei'));
 
             // Calculate max fee per gas = base fee + priority fee
-            const maxFeePerGas = (baseFee + priorityFeeWei).toString();
+            const maxFeePerGas = baseFee.plus(priorityFeeWei).toString();
             const maxPriorityFeePerGas = priorityFeeWei.toString();
             
             // Estimate gas
