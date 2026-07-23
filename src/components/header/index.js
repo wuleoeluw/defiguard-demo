@@ -51,8 +51,7 @@ function Header() {
             setSendAddress('');
             setSendAmount('');
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showSendModal]);
+    }, [showSendModal, setTxStatus, setTxHash, setIsCompleted, setSendAddress, setSendAmount]);
 
     return (
         <div className="container">
