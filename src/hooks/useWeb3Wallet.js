@@ -103,9 +103,24 @@ export const useWeb3Wallet = () => {
             return;
         }
 
-        const amountInEth = parseFloat(sendAmount);
-        if (amountInEth <= 0 || amountInEth > parseFloat(balance)) {
-            alert('Invalid amount or insufficient balance');
+        // Validate amount using Wei integers (BigNumber for exact precision)
+        try {
+            const amountInWei = web3.utils.toWei(sendAmount, 'ether');
+            const amountBN = new BigNumber(amountInWei);
+            const balanceInWei = web3.utils.toWei(balance, 'ether');
+            const balanceBN = new BigNumber(balanceInWei);
+
+            if (amountBN.isLessThanOrEqualTo(0)) {
+                alert('Amount must be greater than 0');
+                return;
+            }
+
+            if (amountBN.isGreaterThan(balanceBN)) {
+                alert('Insufficient balance');
+                return;
+            }
+        } catch (err) {
+            alert('Invalid amount');
             return;
         }
 
@@ -113,7 +128,7 @@ export const useWeb3Wallet = () => {
         setTxStatus('Preparing transaction...');
         
         try {
-            const amountInWei = web3.utils.toWei(amountInEth.toString(), 'ether');
+            const amountInWei = web3.utils.toWei(sendAmount, 'ether');
             
             // Get current block to extract base fee for EIP-1559
             const block = await web3.eth.getBlock('latest');
