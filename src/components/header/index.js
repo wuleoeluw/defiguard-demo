@@ -227,7 +227,7 @@ function Header() {
         <div className="container">
             <nav className="navbar navbar-expand-lg navbar-light bg-light">
                 <a className="navbar-brand" href="/">
-                    <img src={AppLogo} />
+                    <img src={AppLogo} alt="DefiGuard logo" />
                 </a>
                 <div className="navbar-right-controls">
                     <div className="wallet-dropdown">
