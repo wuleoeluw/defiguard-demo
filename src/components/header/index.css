@@ -574,7 +574,9 @@
   background: #01945b;
 }
 
-button:disabled {
+/* Scoped disabled button styling for wallet UI and modals */
+.navbar button:disabled,
+.modal-content button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
