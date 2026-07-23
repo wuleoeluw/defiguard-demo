@@ -193,8 +193,9 @@ function Header() {
                            </div>
                            <div className="modal-body">
                                <div className="form-group">
-                                   <label>Recipient Address</label>
+                                   <label htmlFor="sendAddress">Recipient Address</label>
                                    <input 
+                                       id="sendAddress"
                                        type="text"
                                        className="form-control"
                                        placeholder="0x..."
@@ -204,8 +205,9 @@ function Header() {
                                    />
                                </div>
                                <div className="form-group">
-                                   <label>Amount (ETH)</label>
+                                   <label htmlFor="sendAmount">Amount (ETH)</label>
                                    <input 
+                                       id="sendAmount"
                                        type="number"
                                        className="form-control"
                                        placeholder="0.0"
