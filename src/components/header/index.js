@@ -1,232 +1,51 @@
-import { useEffect, useState } from "react";
-import Web3 from "web3";
-import BigNumber from "bignumber.js";
+import { useState, useEffect } from "react";
+import { useWeb3Wallet } from "../../hooks/useWeb3Wallet";
 
 import "./index.css";
 
 import AppLogo from "../../assets/images/logo.png"
 
 function Header() {
-    const [account, setAccount] = useState('');
-    const [balance, setBalance] = useState('0');
-    const [web3, setWeb3] = useState(null);
+    const {
+        account,
+        balance,
+        sendAddress,
+        sendAmount,
+        txStatus,
+        txHash,
+        isSending,
+        isCompleted,
+        setSendAddress,
+        setSendAmount,
+        setTxStatus,
+        setTxHash,
+        setIsCompleted,
+        connectWallet,
+        updateBalance,
+        sendETH,
+        switchToSepolia,
+        disconnectWallet,
+        copyToClipboard,
+    } = useWeb3Wallet();
+
     const [showWalletMenu, setShowWalletMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showSendModal, setShowSendModal] = useState(false);
     const [showReceiveModal, setShowReceiveModal] = useState(false);
-    const [sendAddress, setSendAddress] = useState('');
-    const [sendAmount, setSendAmount] = useState('');
-    const [txStatus, setTxStatus] = useState('');
-    const [txHash, setTxHash] = useState('');
-    const [isSending, setIsSending] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
 
-    // Connect Wallet
-    const connectWallet = async () => {
-        try {
-            if (!window.ethereum) {
-                alert('MetaMask not detected. Please install MetaMask.');
-                return;
-            }
-
-            const accounts = await window.ethereum.request({
-                method: 'eth_requestAccounts',
-            });
-
-            const web3Instance = new Web3(window.ethereum);
-            setWeb3(web3Instance);
-            setAccount(accounts[0]);
-
-            // Get initial balance
-            const balanceWei = await web3Instance.eth.getBalance(accounts[0]);
-            const balanceEth = web3Instance.utils.fromWei(balanceWei, 'ether');
-            setBalance(balanceEth);
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
-    // Update balance
-    const updateBalance = async () => {
-        if (!web3 || !account) return;
-        try {
-            const balanceWei = await web3.eth.getBalance(account);
-            const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
-            setBalance(balanceEth);
-        } catch (err) {
-            console.error('Failed to fetch balance');
-        }
-    };
-
-    // Listen to account changes
+    // Close send modal after transaction completes
     useEffect(() => {
-        if (window.ethereum) {
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts.length > 0) {
-                    setAccount(accounts[0]);
-                } else {
-                    setAccount('');
-                    setBalance('0');
-                }
-            });
-
-            window.ethereum.on('chainChanged', () => {
-                window.location.reload();
-            });
-        }
-
-        return () => {
-            if (window.ethereum) {
-                window.ethereum.removeAllListeners();
-            }
-        };
-    }, []);
-
-    // Copy to clipboard
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(account);
-        alert('Address copied to clipboard!');
-    };
-
-    const disconnectWallet = () => {
-        setAccount('');
-        setBalance('0');
-        setWeb3(null);
-        setShowWalletMenu(false);
-    };
-
-    // Send ETH Function
-    const sendETH = async () => {
-        if (!sendAddress || !sendAmount) {
-            alert('Please enter recipient address and amount');
-            return;
-        }
-
-        if (!web3 || !web3.utils.isAddress(sendAddress)) {
-            alert('Invalid recipient address');
-            return;
-        }
-
-        const amountInEth = parseFloat(sendAmount);
-        if (amountInEth <= 0 || amountInEth > parseFloat(balance)) {
-            alert('Invalid amount or insufficient balance');
-            return;
-        }
-
-        setIsSending(true);
-        setTxStatus('Preparing transaction...');
-        
-        try {
-            const amountInWei = web3.utils.toWei(amountInEth.toString(), 'ether');
-            
-            // Get current block to extract base fee for EIP-1559
-            const block = await web3.eth.getBlock('latest');
-            const baseFee = new BigNumber(block.baseFeePerGas ?? 0);
-
-            // Set priority fee (tip) - typically 1-2 Gwei
-            const priorityFeeWei = new BigNumber(web3.utils.toWei('2', 'gwei'));
-
-            // Calculate max fee per gas = base fee + priority fee
-            const maxFeePerGas = baseFee.plus(priorityFeeWei).toString();
-            const maxPriorityFeePerGas = priorityFeeWei.toString();
-            
-            // Estimate gas
-            const gasEstimate = await web3.eth.estimateGas({
-                from: account,
-                to: sendAddress,
-                value: amountInWei,
-            });
-
-            setTxStatus('Requesting MetaMask approval...');
-            
-            // Send transaction with EIP-1559 parameters
-            const receipt = await web3.eth.sendTransaction({
-                from: account,
-                to: sendAddress,
-                value: amountInWei,
-                gas: gasEstimate,
-                maxFeePerGas: maxFeePerGas,
-                maxPriorityFeePerGas: maxPriorityFeePerGas,
-            });
-
-            setTxHash(receipt.transactionHash);
-            setTxStatus('Transaction confirmed!');
-            setIsCompleted(true);
-            
-            // Reset form and update balance
-            setSendAddress('');
-            setSendAmount('');
-            await updateBalance();
-            
-            setTimeout(() => {
+        if (isCompleted) {
+            const timer = setTimeout(() => {
                 setShowSendModal(false);
                 setTxStatus('');
                 setTxHash('');
                 setIsCompleted(false);
             }, 2000);
-        } catch (err) {
-            console.error('Transaction error:', err);
-            setTxStatus(`Error: ${err.message}`);
-            setIsCompleted(false);
-        } finally {
-            setIsSending(false);
+            return () => clearTimeout(timer);
         }
-    };
-
-    // Check if connected to Sepolia testnet
-    const checkSepolia = async () => {
-        if (!window.ethereum) return false;
-        try {
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-            return chainId === '0xaa36a7'; // Sepolia chain ID is 11155111 in decimal, 0xaa36a7 in hex
-        } catch (err) {
-            console.error('Error checking chain:', err);
-            return false;
-        }
-    };
-
-    // Switch to Sepolia
-    const switchToSepolia = async () => {
-        try {
-            const isOnSepolia = await checkSepolia();
-            if (isOnSepolia) {
-                alert('Already on Sepolia testnet!');
-                return;
-            }
-
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0xaa36a7' }],
-            });
-            
-            window.location.reload();
-        } catch (err) {
-            if (err.code === 4902) {
-                // Network not added, try to add it
-                try {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: '0xaa36a7',
-                            chainName: 'Sepolia',
-                            rpcUrls: ['https://rpc.sepolia.org'],
-                            nativeCurrency: {
-                                name: 'ETH',
-                                symbol: 'ETH',
-                                decimals: 18,
-                            },
-                            blockExplorerUrls: ['https://sepolia.etherscan.io/'],
-                        }],
-                    });
-                    window.location.reload();
-                } catch (addErr) {
-                    alert('Failed to add Sepolia network');
-                }
-            } else {
-                alert('Failed to switch to Sepolia testnet');
-            }
-        }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCompleted]);
 
     return (
         <div className="container">
@@ -295,7 +114,10 @@ function Header() {
                                        </button>
                                        <button 
                                            className="wallet-menu-btn disconnect-btn"
-                                           onClick={disconnectWallet}
+                                           onClick={() => {
+                                               disconnectWallet();
+                                               setShowWalletMenu(false);
+                                           }}
                                        >
                                            <i className="fa fa-sign-out"></i> Disconnect
                                        </button>
