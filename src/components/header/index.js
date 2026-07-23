@@ -180,9 +180,9 @@ function Header() {
                {/* Send ETH Modal */}
                {showSendModal && (
                    <div className="modal-overlay" onClick={() => !isSending && setShowSendModal(false)}>
-                       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                       <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="send-modal-title" onClick={(e) => e.stopPropagation()}>
                            <div className="modal-header">
-                               <h3>Send ETH</h3>
+                               <h3 id="send-modal-title">Send ETH</h3>
                                <button 
                                    type="button"
                                    className="modal-close"
@@ -251,9 +251,9 @@ function Header() {
                {/* Receive ETH Modal */}
                {showReceiveModal && (
                    <div className="modal-overlay" onClick={() => setShowReceiveModal(false)}>
-                       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                       <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="receive-modal-title" onClick={(e) => e.stopPropagation()}>
                            <div className="modal-header">
-                               <h3>Receive ETH</h3>
+                               <h3 id="receive-modal-title">Receive ETH</h3>
                                <button 
                                    type="button"
                                    className="modal-close"
