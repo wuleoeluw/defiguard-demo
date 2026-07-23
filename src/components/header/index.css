@@ -2,18 +2,29 @@
 .navbar {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .navbar-brand {
   flex-shrink: 0;
+  order: 1;
 }
 
-.navbar-right-group {
+.navbar-right-controls {
   display: flex;
   align-items: center;
-  margin-left: auto;
   gap: 10px;
+  order: 3;
+}
+
+.navbar-collapse {
+  order: 2;
+  flex-grow: 1;
+}
+
+.navbar-toggler {
+  height: 38px;
+  padding: 6px 10px !important;
 }
 
 .wallet-dropdown {
@@ -25,17 +36,19 @@
 
 .navbar-collapse {
   display: none;
-  order: 3;
-  width: 100%;
 }
 
 .navbar-collapse.show {
-  display: block !important;
+  display: flex !important;
 }
 
-.navbar-toggler {
-  height: 38px;
-  padding: 6px 10px !important;
+.navbar-nav {
+  display: flex;
+  flex-direction: row;
+}
+
+.nav-item {
+  display: inline-block;
 }
 
 .btn-connect-wallet {
@@ -198,23 +211,87 @@
 
 /* Mobile Responsive */
 @media (min-width: 992px) {
+  .navbar {
+    flex-wrap: nowrap;
+  }
+
+  .navbar-brand {
+    order: 1;
+  }
+
   .navbar-collapse {
+    order: 2;
     display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    flex-grow: 1;
+  }
+
+  .navbar-right-controls {
+    order: 3;
+    margin-left: 0;
+  }
+
+  .navbar-toggler {
+    display: none;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+  }
+
+  .form-inline {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 15px;
+  }
+
+  .wallet-dropdown {
+    margin-left: 0;
   }
 }
 
 @media (max-width: 991px) {
   .navbar {
     flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .navbar-brand {
+    order: 1;
+  }
+
+  .navbar-right-controls {
+    order: 2;
+    margin-left: auto;
   }
 
   .navbar-collapse {
     display: none;
+    width: 100%;
+    flex-direction: column;
+    order: 3;
   }
 
   .navbar-collapse.show {
-    display: block !important;
+    display: flex !important;
+  }
+
+  .navbar-nav {
+    flex-direction: column;
     width: 100%;
+  }
+
+  .nav-item {
+    display: block;
+    width: 100%;
+  }
+
+  .form-inline {
+    width: 100%;
+    margin: 10px 0;
   }
 
   .btn-connect-wallet,

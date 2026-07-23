@@ -92,7 +92,7 @@ function Header() {
                 <a className="navbar-brand" href="/">
                     <img src={AppLogo} />
                 </a>
-                <div className="navbar-right-group">
+                <div className="navbar-right-controls">
                     <div className="wallet-dropdown">
                        {!account ? (
                            <button 
@@ -155,7 +155,6 @@ function Header() {
                         <span className="navbar-toggler-icon"></span>
                     </button>
                 </div>
-                
                 <div className={`collapse navbar-collapse ${showMobileMenu ? 'show' : ''}`} id="navbarSupportedContent">
                     <ul className="navbar-nav ml-auto">
                         <li className="nav-item">
