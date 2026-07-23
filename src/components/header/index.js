@@ -204,7 +204,7 @@ function Header() {
                         params: [{
                             chainId: '0xaa36a7',
                             chainName: 'Sepolia',
-                            rpcUrls: ['https://rpc.sepolia.org']
+                            rpcUrls: ['https://rpc.sepolia.org'],
                             nativeCurrency: {
                                 name: 'ETH',
                                 symbol: 'ETH',
